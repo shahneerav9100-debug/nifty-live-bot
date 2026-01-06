@@ -5,18 +5,28 @@ import time
 from flask import Flask
 
 # --- PASTE YOUR ACTUAL DETAILS HERE ---
-TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"
-CHAT_ID = "YOUR_NUMERIC_CHAT_ID"
+TOKEN = "8598972684:AAFAjrhlbY9Uyz7cYMcxJM0kl1lMVkTT0kQ"
+CHAT_ID = "8033862332"
 
 app = Flask(__name__)
 
 def send_telegram(msg):
-    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+    # Strip any accidental spaces from your token
+    clean_token = TOKEN.strip() 
+    
+    # Ensure the URL is perfectly built with the slash
+    url = f"https://api.telegram.org/bot{clean_token}/sendMessage"
+    
+    payload = {
+        "chat_id": CHAT_ID.strip() if isinstance(CHAT_ID, str) else CHAT_ID,
+        "text": msg
+    }
+    
     try:
-        r = requests.post(url, json={"chat_id": CHAT_ID, "text": msg})
+        r = requests.post(url, json=payload)
         print(f"Telegram Output: {r.status_code} - {r.text}", flush=True)
     except Exception as e:
-        print(f"Telegram Error: {e}", flush=True)
+        print(f"Connection Error: {e}", flush=True)
 
 # This is the "Engine" that runs in the background
 def run_bot_logic():
@@ -41,3 +51,4 @@ def test_route():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
+
