@@ -1,14 +1,17 @@
 from flask import Flask
 import threading
-from main import run_bot
+import main 
+import os
 
 app = Flask(__name__)
 
 @app.route('/')
-def index():
-    return "Bot is alive!"
+def home():
+    return "Bot logic is triggered!"
 
 if __name__ == "__main__":
-    # Start the Nifty bot in a separate thread so the web server can run
-    threading.Thread(target=run_bot, daemon=True).start()
-    app.run(host="0.0.0.0", port=10000)
+    # This starts your trading logic in the background
+    threading.Thread(target=main.run_bot, daemon=True).start()
+    # Render uses port 10000 by default
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host='0.0.0.0', port=port)
