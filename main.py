@@ -32,7 +32,7 @@ def run_bot():
         current_time = now.strftime("%H:%M")
         
         # 1. MARKET HOURS CHECK
-        if "09:15" <= current_time <= "23:10" and now.weekday() < 5:
+        if "09:15" <= current_time <= "23:30" and now.weekday() < 5:
             try:
                 # Fetch data (randomize agent to avoid block)
                 df = yf.download(SYMBOL, period="2d", interval="15m", progress=False)
@@ -97,3 +97,4 @@ def run_bot():
 if __name__ == "__main__":
 
     run_bot()
+
