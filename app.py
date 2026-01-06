@@ -3,7 +3,7 @@ from flask import Flask
 
 # --- PASTE YOUR TOKEN BELOW ---
 # Example: "712345678:AAH_ExampleToken"
-TOKEN = "8598972684:AAFAjrhlbY9Uyz7cYMcxJM0kl1lMVkTT0kQ"
+TOKEN = "8119396994:AAFdhHdq8mRwaFyGsfxnzn5vMTFo43Nnl_Q"
 CHAT_ID = "8033862332"
 
 app = Flask(__name__)
@@ -45,3 +45,4 @@ def test():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
+
