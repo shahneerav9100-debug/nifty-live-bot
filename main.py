@@ -1,8 +1,8 @@
 import requests
 import time
 
-TOKEN = "PASTE_YOUR_TOKEN_HERE"
-CHAT_ID = "PASTE_YOUR_NUMBER_ID_HERE"
+TOKEN = "8598972684:AAFAjrhlbY9Uyz7cYMcxJM0kl1lMVkTT0kQ"
+CHAT_ID = "8033862332"
 
 def run_bot():
     print("Bot is starting up...", flush=True)
@@ -20,3 +20,4 @@ def run_bot():
 
 if __name__ == "__main__":
     run_bot()
+
