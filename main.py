@@ -1,20 +1,22 @@
-import requests, time
+import requests
+import time
 
-TOKEN = "8598972684:AAFAjrhlbY9Uyz7cYMcxJM0kl1lMVkTT0kQ"
-CHAT_ID = "8033862332"
-
-def send_telegram(msg):
-    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-    requests.post(url, json={"chat_id": CHAT_ID, "text": msg})
+TOKEN = "PASTE_YOUR_TOKEN_HERE"
+CHAT_ID = "PASTE_YOUR_NUMBER_ID_HERE"
 
 def run_bot():
-    # This will run the second you click 'Deploy'
-    print("DEBUG: Attempting to send message...")
-    send_telegram("🚨 DEBUG TEST: The bot is alive on Render!")
-    
+    print("Bot is starting up...", flush=True)
     while True:
-        print("DEBUG: I am awake and waiting...")
-        time.sleep(60)
+        url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+        data = {"chat_id": CHAT_ID, "text": "🔔 TEST: If you see this, the connection is FIXED!"}
+        
+        try:
+            response = requests.post(url, json=data)
+            print(f"Sent message. Response: {response.status_code}", flush=True)
+        except Exception as e:
+            print(f"Error: {e}", flush=True)
+            
+        time.sleep(30) # Wait 30 seconds and try again
 
 if __name__ == "__main__":
     run_bot()
