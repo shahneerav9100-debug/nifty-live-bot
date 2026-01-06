@@ -8,7 +8,7 @@ from datetime import datetime, timezone, timedelta
 # --- CONFIGURATION ---
 TOKEN = "8598972684:AAFAjrhlbY9Uyz7cYMcxJM0kl1lMVkTT0kQ"
 CHAT_ID = "8033862332"
-SYMBOL = "^NSEI"
+SYMBOL = "BTC-USD"
 
 # --- TRADE STATE ---
 active_trade = None  # Stores details like {'type': 'BUY', 'entry': 25000, 'sl': 24950, 'target': 25100}
@@ -32,7 +32,7 @@ def run_bot():
         current_time = now.strftime("%H:%M")
         
         # 1. MARKET HOURS CHECK
-        if "09:15" <= current_time <= "15:30" and now.weekday() < 5:
+        if "09:15" <= current_time <= "23:10" and now.weekday() < 5:
             try:
                 # Fetch data (randomize agent to avoid block)
                 df = yf.download(SYMBOL, period="2d", interval="15m", progress=False)
@@ -95,4 +95,5 @@ def run_bot():
             time.sleep(600)
 
 if __name__ == "__main__":
+
     run_bot()
