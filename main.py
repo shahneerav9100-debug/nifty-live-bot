@@ -1,25 +1,40 @@
+import os
+import threading
 import requests
 import time
-import sys
+from flask import Flask
 
-TOKEN = "8598972684:AAFAjrhlbY9Uyz7cYMcxJM0kl1lMVkTT0kQ"
-CHAT_ID = "8033862332"
+# --- YOUR CONFIG ---
+TOKEN = "YOUR_TOKEN_HERE"
+CHAT_ID = "YOUR_ID_HERE"
+
+app = Flask(__name__)
 
 def send_telegram(msg):
-    print(f"DEBUG: Attempting to send: {msg}", flush=True)
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
     try:
-        r = requests.post(url, json={"chat_id": CHAT_ID, "text": msg}, timeout=10)
-        print(f"DEBUG: Telegram Response Code: {r.status_code}", flush=True)
-        print(f"DEBUG: Telegram Server Said: {r.text}", flush=True)
+        r = requests.post(url, json={"chat_id": CHAT_ID, "text": msg})
+        print(f"Telegram Status: {r.status_code}", flush=True)
     except Exception as e:
-        print(f"DEBUG: Connection Error: {e}", flush=True)
+        print(f"Error: {e}", flush=True)
 
+# This runs the bot logic
 def run_bot():
-    print("--- BOT STARTED ---", flush=True)
-    send_telegram("🚀 BOT DEPLOYED: I am now online and tracking.")
-    
+    print("Bot background thread started!", flush=True)
     while True:
-        # We use a very short sleep for testing so you see logs moving
-        print("DEBUG: Bot is alive... waiting 30s", flush=True)
-        time.sleep(30)
+        # Every 5 minutes, it will just log to show it is alive
+        print("Bot is ticking...", flush=True)
+        time.sleep(300)
+
+# Start the thread IMMEDIATELY when the file is loaded
+threading.Thread(target=run_bot, daemon=True).start()
+
+@app.route('/')
+def home():
+    send_telegram("🚀 Server just started up!")
+    return "Bot is Active"
+
+@app.route('/test')
+def test():
+    send_telegram("🔔 Test link clicked!")
+    return "Success"
