@@ -1,54 +1,47 @@
-import os
-import threading
-import requests
-import time
+import os, threading, requests, time
 from flask import Flask
 
-# --- PASTE YOUR ACTUAL DETAILS HERE ---
+# --- PASTE YOUR TOKEN BELOW ---
+# Example: "712345678:AAH_ExampleToken"
 TOKEN = "8598972684:AAFAjrhlbY9Uyz7cYMcxJM0kl1lMVkTT0kQ"
 CHAT_ID = "8033862332"
 
 app = Flask(__name__)
 
 def send_telegram(msg):
-    # Strip any accidental spaces from your token
-    clean_token = TOKEN.strip() 
+    # 1. Clean the token (removes spaces/new lines)
+    clean_token = str(TOKEN).strip()
     
-    # Ensure the URL is perfectly built with the slash
-    url = f"https://api.telegram.org/bot{clean_token}/sendMessage"
+    # 2. Build the URL (ensuring 'bot' prefix is there only once)
+    if not clean_token.startswith("bot"):
+        url_token = f"bot{clean_token}"
+    else:
+        url_token = clean_token
+        
+    final_url = f"https://api.telegram.org/{url_token}/sendMessage"
     
     payload = {
-        "chat_id": CHAT_ID.strip() if isinstance(CHAT_ID, str) else CHAT_ID,
-        "text": msg
+        "chat_id": str(CHAT_ID).strip(),
+        "text": msg,
+        "parse_mode": "Markdown"
     }
     
     try:
-        r = requests.post(url, json=payload)
-        print(f"Telegram Output: {r.status_code} - {r.text}", flush=True)
+        r = requests.post(final_url, json=payload, timeout=10)
+        # This will now print the REAL reason for success or failure
+        print(f"TELEGRAM DEBUG: Status {r.status_code} | Response: {r.text}", flush=True)
     except Exception as e:
-        print(f"Connection Error: {e}", flush=True)
-
-# This is the "Engine" that runs in the background
-def run_bot_logic():
-    print("Background Engine: STARTED", flush=True)
-    while True:
-        # We will put your Nifty logic back here later
-        time.sleep(60)
-
-# START THE ENGINE IMMEDIATELY
-threading.Thread(target=run_bot_logic, daemon=True).start()
+        print(f"NETWORK ERROR: {e}", flush=True)
 
 @app.route('/')
 def home():
-    return "<h1>Status: ONLINE</h1><p>The bot engine is running in the background.</p>"
+    return "Server is Live. Visit /test to trigger message."
 
 @app.route('/test')
-def test_route():
-    print("User clicked the /test link!", flush=True)
-    send_telegram("🔔 SUCCESS! The /test route is working and the bot can talk to you.")
-    return "<h1>Message Sent!</h1><p>Check your Telegram now.</p>"
+def test():
+    send_telegram("🚀 *SUCCESS!* Your bot is finally talking to you!")
+    return "Check your Render logs and Telegram phone app now."
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
-
