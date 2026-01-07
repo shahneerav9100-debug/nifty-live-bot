@@ -5,8 +5,9 @@ import yfinance as yf
 import pandas_ta as ta
 
 # --- CONFIG ---
-TOKEN = "YOUR_TOKEN"
-CHAT_ID = "YOUR_ID"
+TOKEN = "8119396994:AAFdhHdq8mRwaFyGsfxnzn5vMTFo43Nnl_Q"
+CHAT_ID = "8033862332"
+
 SYMBOL = "^NSEI"
 
 app = Flask(__name__)
@@ -76,3 +77,4 @@ def home():
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
+
