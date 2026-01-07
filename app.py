@@ -1,10 +1,11 @@
-import os, threading, requests, time, sys
+import os, threading, requests, time
 from flask import Flask
 from datetime import datetime, timezone, timedelta
 import yfinance as yf
 import pandas_ta as ta
 
 # --- CONFIG ---
+# Replace these with your actual details
 TOKEN = "8119396994:AAFdhHdq8mRwaFyGsfxnzn5vMTFo43Nnl_Q"
 CHAT_ID = "8033862332"
 
@@ -37,13 +38,36 @@ def send_telegram(msg):
     except Exception as e:
         print(f"Telegram Error: {e}")
 
+def get_morning_cues():
+    try:
+        # GIFT Nifty proxy (usually tracked via futures symbols)
+        gift = yf.download(SYMBOL, period="1d", interval="15m", progress=False)
+        us_mkt = yf.download("^GSPC", period="1d", progress=False)
+        
+        change = round(gift['Close'].iloc[-1] - gift['Open'].iloc[0], 2)
+        direction = "🟢 BULLISH GAP" if change > 0 else "🔴 BEARISH GAP"
+        
+        msg = (
+            f"☀️ *GOOD MORNING! MARKET PREP*\n"
+            f"📅 {get_ist_time().strftime('%d %b %Y')} | 09:05 AM\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"🌍 *GLOBAL CUES*\n"
+            f"• Sentiment: `{direction}`\n"
+            f"• Wall Street (S&P500): `{'✅ Green' if us_mkt['Close'].iloc[-1] > us_mkt['Open'].iloc[0] else '❌ Red'}`\n\n"
+            f"🚀 *STRATEGY*\n"
+            f"The bot is now in **Morning Jumpstart** mode. High-frequency 30s checks start at 09:15 AM.\n"
+            f"━━━━━━━━━━━━━━━━━━━━"
+        )
+        send_telegram(msg)
+    except:
+        send_telegram("☀️ *GOOD MORNING!* Bot is ready for the 09:15 AM open. Global data fetch failed, but logic is active.")
+
 def analyze_and_report():
     try:
-        # Fetch 5m and 15m data
         df = yf.download(SYMBOL, period="2d", interval="5m", progress=False)
-        if df.empty or len(df) < 50: return
+        if df.empty or len(df) < 20: return
 
-        # Indicators
+        # Indicator Logic
         df['EMA20'] = ta.ema(df['Close'], length=20)
         df['EMA50'] = ta.ema(df['Close'], length=50)
         df['RSI'] = ta.rsi(df['Close'], length=14)
@@ -53,33 +77,34 @@ def analyze_and_report():
         c = df.iloc[-1]
         price, rsi, atr = round(c['Close'], 2), round(c['RSI'], 2), round(c['ATR'], 2)
         
-        # Expert Logic (Confluence of Trend + Momentum)
-        is_buy = price > c['EMA20'] and rsi > 55 and c['MACD_12_26_9'] > c['MACDs_12_26_9']
-        is_sell = price < c['EMA20'] and rsi < 45 and c['MACD_12_26_9'] < c['MACDs_12_26_9']
+        # Confluence Trigger Logic
+        is_buy = price > c['EMA20'] and rsi > 55 and macd['MACD_12_26_9'].iloc[-1] > macd['MACDs_12_26_9'].iloc[-1]
+        is_sell = price < c['EMA20'] and rsi < 45 and macd['MACD_12_26_9'].iloc[-1] < macd['MACDs_12_26_9'].iloc[-1]
 
         if is_buy or is_sell:
             trade_type = "BUY" if is_buy else "SELL"
-            sl = round(price - (1.5 * atr) if is_buy else price + (1.5 * atr), 2)
-            t1 = round(price + (2 * atr) if is_buy else price - (2 * atr), 2)
-            
-            # Prevent duplicate alerts for the same price action
-            trade_id = f"{trade_type}_{price}"
+            # Prevent spamming the same price alert
+            trade_id = f"{trade_type}_{round(price/5)*5}" 
             if trade_id not in trade_log:
                 trade_log.append(trade_id)
-                
+                sl = round(price - (1.5 * atr) if is_buy else price + (1.5 * atr), 2)
+                t1 = round(price + (2 * atr) if is_buy else price - (2 * atr), 2)
+                t2 = round(price + (4 * atr) if is_buy else price - (4 * atr), 2)
+
                 report = (
                     f"🏛️ *NIFTY 50 EXPERT SETUP*\n"
                     f"━━━━━━━━━━━━━━━━━━━━\n"
                     f"*1. MARKET OVERVIEW*\n"
-                    f"Trend: `{'Bullish' if is_buy else 'Bearish'}` | Vol: `{round(atr,1)}` \n\n"
-                    f"*2. TECHNICAL SIGNALS*\n"
-                    f"RSI: `{rsi}` | MACD: `Confirmed` | EMA: `Supporting` \n\n"
+                    f"Trend: `{'Bullish' if is_buy else 'Bearish'}` | ATR: `{atr}`\n\n"
+                    f"*2. INDICATOR SIGNALS*\n"
+                    f"RSI: `{rsi}` | EMA: `Support` | MACD: `Crossed` \n\n"
                     f"*3. ACTIONABLE TRADE*\n"
                     f"• *TYPE:* `{trade_type}`\n"
                     f"• Entry: `{price}`\n"
                     f"• Stop-Loss: `{sl}`\n"
-                    f"• Target 1: `{t1}` | Target 2: `{round(t1 + (atr if is_buy else -atr),2)}` \n\n"
-                    f"🎯 *Confidence: 85%* | Invalid: `{sl}`\n"
+                    f"• Target 1: `{t1}`\n"
+                    f"• Target 2: `{t2}`\n\n"
+                    f"🎯 *Confidence: 85%* | Invalidation: `{sl}`\n"
                     f"━━━━━━━━━━━━━━━━━━━━"
                 )
                 send_telegram(report)
@@ -97,46 +122,61 @@ def generate_eod_summary():
             f"━━━━━━━━━━━━━━━━━━━━\n"
             f"• Day Result: `{'BULLISH' if change > 0 else 'BEARISH'}`\n"
             f"• Net Change: `{change} pts`\n"
-            f"• Signals Today: `{len(trade_log)}` \n\n"
-            f"👋 *Bot shutting down until 09:15 AM.*"
+            f"• Total Trade Signals: `{len(trade_log)}` \n\n"
+            f"👋 *Bot shutting down. See you tomorrow!*"
         )
         send_telegram(summary)
         trade_log.clear()
     except: pass
 
 def main_loop():
+    morning_sent = False
     eod_done = False
-    print("🚀 Nifty Expert Bot is running...")
+    print("🤖 Nifty Bot Started and Waiting for Market IST...")
+    
     while True:
         try:
             now = get_ist_time()
             curr_time = now.strftime("%H:%M")
             
-            if is_market_live():
+            # 9:05 AM Morning Cues
+            if curr_time == "09:05" and not morning_sent:
+                get_morning_cues()
+                morning_sent = True
+                time.sleep(60)
+
+            # 9:15 AM - 3:30 PM Trading
+            elif is_market_live():
                 analyze_and_report()
-                eod_done = False # Reset flag for tomorrow
+                morning_sent = False # Reset
+                eod_done = False # Reset
                 
-                # MORNING JUMP: Check every 30s during first 10 mins
+                # Jumpstart Mode (High Frequency for first 10 mins)
                 if "09:15" <= curr_time <= "09:25":
                     time.sleep(30)
                 else:
-                    time.sleep(300) # 5-minute normal check
+                    time.sleep(300) # Normal 5-min checks
             
+            # 3:35 PM Summary and Shutdown
             elif curr_time == "15:35" and not eod_done:
                 generate_eod_summary()
                 eod_done = True
                 time.sleep(60)
+            
             else:
-                time.sleep(60) # Idle sleep
+                # Night/Weekend idle check every 60s
+                time.sleep(60)
+                
         except Exception as e:
             print(f"Main Loop Error: {e}")
             time.sleep(10)
 
+# Start background thread
 threading.Thread(target=main_loop, daemon=True).start()
 
 @app.route('/')
 def home():
-    return f"Bot Status: Online | Time: {get_ist_time().strftime('%H:%M:%S')}"
+    return f"Nifty Expert Bot - Online. Current IST: {get_ist_time().strftime('%H:%M:%S')}"
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
